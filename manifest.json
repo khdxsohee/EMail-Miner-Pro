@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "EMail Miner Pro",
+  "version": "6.11.79",
+  "description": "Extract emails & websites smartly. Professional tool by Khalid Software House.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}
