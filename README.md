@@ -99,7 +99,8 @@ This ensures your CSV file contains actual clickable business websites, not just
 
 ## 📸 Screenshots
 
-*(Add your screenshots here in the actual repo)*
+<img width="395" height="558" alt="image" src="https://github.com/user-attachments/assets/8201c75c-1126-4c06-810e-712673dd98b9" />
+
 
 1.  **Dashboard View:** Modern table showing extracted leads.
 2.  **Smart Action:** Clicking "Mine Data" on a Google Search page.
@@ -111,6 +112,10 @@ This ensures your CSV file contains actual clickable business websites, not just
 
 ```text
 EMail-Miner-Pro/
+├── icons/              # Extension ICONS
+    └── icon16.png
+    └── icon48.png
+    └── icon128.png
 ├── manifest.json       # Extension configuration
 ├── popup.html          # User Interface (HTML/CSS)
 ├── popup.js            # Core Logic & Extraction Script
@@ -169,3 +174,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 </div>
 
 ---
+
