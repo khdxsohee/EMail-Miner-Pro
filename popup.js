@@ -1,6 +1,7 @@
 // --- VARIABLES ---
 let allData = [];
 const STORAGE_KEY = 'leadsync_data_v2';
+const AUTO_MODE_KEY = 'auto_mining_enabled'; // New key for toggle
 
 // --- DOM ELEMENTS ---
 const extractBtn = document.getElementById('extractBtn');
@@ -9,16 +10,31 @@ const clearBtn = document.getElementById('clearBtn');
 const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
 const countSpan = document.getElementById('count');
-const statusSpan = document.getElementById('status');
 const toastEl = document.getElementById('toast');
+const autoToggle = document.getElementById('autoToggle');
+const headerStatusDot = document.getElementById('headerStatusDot');
+const headerStatusText = document.getElementById('headerStatusText');
+const modeBadge = document.getElementById('modeBadge');
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
+    loadAutoModeState();
 });
 
 // --- EVENT LISTENERS ---
-extractBtn.addEventListener('click', handleExtraction);
+
+// 1. Toggle Change Logic
+autoToggle.addEventListener('change', (e) => {
+    const isEnabled = e.target.checked;
+    saveAutoModeState(isEnabled);
+    showToast(isEnabled ? "Auto-Mining Enabled" : "Auto-Mining Disabled");
+});
+
+// 2. Manual Extraction (Original Logic)
+extractBtn.addEventListener('click', handleManualExtraction);
+
+// 3. Export & Clear
 exportBtn.addEventListener('click', exportToCSV);
 clearBtn.addEventListener('click', () => {
     if(allData.length === 0) return;
@@ -30,7 +46,52 @@ clearBtn.addEventListener('click', () => {
     }
 });
 
+// 4. Real-time Update Listener (Background Sync)
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local') {
+        if (changes[STORAGE_KEY]) {
+            allData = changes[STORAGE_KEY].newValue;
+            renderTable();
+            // Flash effect
+            countSpan.style.color = '#22C55E';
+            setTimeout(() => countSpan.style.color = '', 500);
+        }
+    }
+});
+
 // --- CORE FUNCTIONS ---
+
+function loadAutoModeState() {
+    chrome.storage.local.get([AUTO_MODE_KEY], (result) => {
+        const isEnabled = !!result[AUTO_MODE_KEY]; // true or false
+        autoToggle.checked = isEnabled;
+        updateUIForMode(isEnabled);
+    });
+}
+
+function saveAutoModeState(isEnabled) {
+    chrome.storage.local.set({ [AUTO_MODE_KEY]: isEnabled });
+    updateUIForMode(isEnabled);
+}
+
+function updateUIForMode(isEnabled) {
+    if (isEnabled) {
+        headerStatusDot.classList.add('active');
+        headerStatusText.textContent = "Auto-Mining Active";
+        modeBadge.textContent = "AUTO-ON";
+        modeBadge.style.color = "#166534";
+        modeBadge.style.background = "#DCFCE7";
+        modeBadge.style.padding = "2px 6px";
+        modeBadge.style.borderRadius = "4px";
+        modeBadge.style.fontSize = "9px";
+    } else {
+        headerStatusDot.classList.remove('active');
+        headerStatusText.textContent = "Manual Mode";
+        modeBadge.textContent = "MANUAL";
+        modeBadge.style.color = "#64748B";
+        modeBadge.style.background = "transparent";
+    }
+}
 
 function loadData() {
     chrome.storage.local.get([STORAGE_KEY], (result) => {
@@ -46,21 +107,19 @@ function saveData() {
     updateStats();
 }
 
-// 3. SMART EXTRACTION LOGIC
-async function handleExtraction() {
-    // UI Loading
+// --- MANUAL EXTRACTION LOGIC (Exact Original) ---
+async function handleManualExtraction() {
     extractBtn.disabled = true;
     const originalText = extractBtn.innerHTML;
     extractBtn.innerHTML = "Analyzing...";
-    statusSpan.textContent = "Scanning content...";
-
+    
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab) return;
 
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: scrapePageContentAdvanced,
+            func: scrapePageContentAdvanced, // Defined below
         });
 
         if (results && results[0] && results[0].result) {
@@ -75,22 +134,19 @@ async function handleExtraction() {
     }
 }
 
-// 4. ADVANCED SCRAPER (The Key Fix)
+// --- SCRAPER FUNCTION (Shared Logic) ---
 function scrapePageContentAdvanced() {
-    // 1. Find Emails
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
     const text = document.body.innerText;
     const emails = text.match(emailRegex) || [];
 
-    // 2. Gather all Links with their text context
-    // We need both href and the text inside <a> to match keywords
     const linksData = Array.from(document.querySelectorAll('a[href]')).map(a => {
         return {
             url: a.href,
             text: a.innerText.toLowerCase().trim(),
             hostname: a.hostname
         };
-    }).filter(l => l.hostname.length > 3); // filter out empty anchors
+    }).filter(l => l.hostname.length > 3);
 
     return {
         emails,
@@ -100,7 +156,7 @@ function scrapePageContentAdvanced() {
     };
 }
 
-// 5. SMART PROCESSING (Keyword Matching)
+// --- PROCESS & SAVE RESULTS (Shared Logic) ---
 function processResults(data) {
     let newCount = 0;
     
@@ -112,20 +168,18 @@ function processResults(data) {
             name = name.charAt(0).toUpperCase() + name.slice(1);
             
             let websiteUrl = "";
-            let confidence = "auto"; // 'verified', 'linked', 'auto'
+            let confidence = "auto"; 
             
             const domain = email.split('@')[1];
-            const username = email.split('@')[0]; // e.g. "skinstorepakistan"
+            const username = email.split('@')[0];
 
-            // --- LEVEL 1: Verified (Exact Domain Match) ---
+            // LEVEL 1: Verified (Exact Domain Match)
             const exactLink = data.linksData.find(l => l.hostname.includes(domain));
             if (exactLink) {
                 websiteUrl = exactLink.url;
                 confidence = "verified";
             }
-            // --- LEVEL 2: Linked (Smart Keyword Match for Gmail/Yahoo users) ---
-            // If email is user@gmail.com, search for links containing "user" in the link text
-            // Only do this if username is longer than 5 chars to avoid generic matches like "info"
+            // LEVEL 2: Linked (Smart Keyword Match)
             else if (username.length > 5) {
                 const keywordLink = data.linksData.find(l => 
                     l.text.includes(username) || l.hostname.includes(username)
@@ -135,7 +189,7 @@ function processResults(data) {
                     confidence = "linked";
                 }
             }
-            // --- LEVEL 3: Auto (Construction) ---
+            // LEVEL 3: Auto (Construction)
             else {
                 websiteUrl = `https://${domain}`;
                 confidence = "auto";
@@ -147,7 +201,8 @@ function processResults(data) {
                 email: email,
                 website: websiteUrl,
                 source: data.pageTitle,
-                confidence: confidence
+                confidence: confidence,
+                timestamp: new Date().toISOString()
             });
             newCount++;
         }
@@ -157,15 +212,13 @@ function processResults(data) {
     renderTable();
     
     if (newCount > 0) {
-        statusSpan.textContent = `Synced ${newCount} records`;
         showToast(`Successfully synced ${newCount} leads`);
     } else {
-        statusSpan.textContent = "No new emails found";
         showToast("No new emails detected");
     }
 }
 
-// 6. RENDER TABLE
+// --- RENDER TABLE ---
 function renderTable() {
     tableBody.innerHTML = '';
     
@@ -173,10 +226,11 @@ function renderTable() {
         emptyState.style.display = 'block';
     } else {
         emptyState.style.display = 'none';
-        [...allData].reverse().forEach(item => {
+        const sortedData = [...allData].reverse();
+        
+        sortedData.forEach(item => {
             const row = document.createElement('tr');
             
-            // Determine Badge Text & Class
             let badgeClass = 'badge-auto';
             let badgeText = 'Auto';
             if(item.confidence === 'verified') { badgeClass = 'badge-verified'; badgeText = 'Verified'; }
@@ -190,7 +244,7 @@ function renderTable() {
                 <td>
                     <div class="web-cell">
                         <a href="${item.website}" target="_blank">
-                            ${item.website.replace('https://','').replace('http://','')}
+                            ${item.website.replace('https://','').replace('http://','').split('/')[0]}
                         </a>
                         <span class="badge ${badgeClass}">${badgeText}</span>
                     </div>
@@ -208,14 +262,12 @@ function renderTable() {
     updateStats();
 }
 
-// 7. DELETE ITEM
 window.deleteItem = function(id) {
     allData = allData.filter(item => item.id !== id);
     saveData();
     renderTable();
 }
 
-// 8. EXPORT CSV
 function exportToCSV() {
     if (allData.length === 0) {
         showToast("No data to export");

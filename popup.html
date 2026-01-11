@@ -9,13 +9,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
         :root {
-            --primary: #0F172A;       /* Slate 900 - Deep Enterprise Dark */
-            --accent: #3B82F6;        /* Blue 500 - Professional Blue */
+            --primary: #0F172A;       
+            --accent: #3B82F6;        
             --accent-hover: #2563EB;
-            --bg-body: #F1F5F9;       /* Slate 100 */
+            --bg-body: #F1F5F9;       
             --surface: #FFFFFF;
-            --text-main: #334155;     /* Slate 700 */
-            --text-light: #64748B;    /* Slate 500 */
+            --text-main: #334155;     
+            --text-light: #64748B;    
             --border: #E2E8F0;
             --danger: #EF4444;
             
@@ -27,7 +27,7 @@
 
         body {
             width: 400px;
-            height: 560px;
+            height: 580px;
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
@@ -40,24 +40,88 @@
         header {
             background: var(--primary);
             color: white;
-            padding: 18px 20px;
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         .logo-area { display: flex; flex-direction: column; }
-        .logo-area h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+        .logo-area h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;}
         .logo-area span { font-size: 10px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background-color: #94A3B8; /* Default Grey (OFF) */
+            transition: background-color 0.3s;
+        }
+        .status-dot.active { background-color: #22C55E; box-shadow: 0 0 8px #22C55E; }
 
-        /* ACTIONS */
+        /* CONTROLS */
         .controls {
             padding: 16px;
             display: flex;
-            gap: 10px;
+            flex-direction: column; /* Changed to column to fit toggle */
+            gap: 12px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
         }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            background: #F8FAFC;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding-left: 12px;
+        }
+        
+        .toggle-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Toggle Switch CSS */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
         
         button {
             border: none;
@@ -112,7 +176,6 @@
 
         td { padding: 12px 20px; vertical-align: top; }
 
-        /* Specific Styling */
         .email-cell { font-weight: 600; color: var(--primary); display: block; font-size: 13px; text-decoration: none; }
         .name-cell { font-size: 11px; color: var(--text-light); display: block; margin-top: 2px; }
 
@@ -129,9 +192,9 @@
             border-radius: 4px;
             letter-spacing: 0.3px;
         }
-        .badge-verified { background: #DCFCE7; color: #166534; } /* Green */
-        .badge-linked { background: #DBEAFE; color: #1E40AF; } /* Blue */
-        .badge-auto { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; } /* Gray */
+        .badge-verified { background: #DCFCE7; color: #166534; } 
+        .badge-linked { background: #DBEAFE; color: #1E40AF; } 
+        .badge-auto { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; } 
 
         .action-btn { cursor: pointer; color: #CBD5E1; padding: 4px; border-radius: 4px; }
         .action-btn:hover { color: var(--danger); background: #FEF2F2; }
@@ -148,6 +211,7 @@
             position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
             background: #1E293B; color: white; padding: 8px 16px; border-radius: 6px;
             font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 100;
         }
         #toast.show { opacity: 1; }
 
@@ -158,34 +222,46 @@
     <!-- HEADER -->
     <header>
         <div class="logo-area">
-            <h1>EMail Miner Pro</h1>
-            <span>Smart Data Extraction</span>
+            <h1>
+                <span id="headerStatusDot" class="status-dot"></span>
+                EMail Miner Pro
+            </h1>
+            <span id="headerStatusText">Manual Mode</span>
         </div>
-        <!-- Icon representing Mining/Extraction -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-        </svg>
     </header>
 
     <!-- CONTROLS -->
     <div class="controls">
-        <button id="extractBtn" class="btn-main">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            Mine Email Data
-        </button>
-        <button id="exportBtn" class="btn-sec">Export CSV</button>
-        <button id="clearBtn" class="btn-sec" style="width: 36px;" title="Clear">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        </button>
+        <!-- NEW: AUTO TOGGLE -->
+        <div class="toggle-row">
+            <div class="toggle-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                Auto-Mining
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="autoToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- MANUAL BUTTONS -->
+        <div class="btn-row">
+            <button id="extractBtn" class="btn-main">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Mine Current Tab
+            </button>
+            <button id="exportBtn" class="btn-sec">Export</button>
+            <button id="clearBtn" class="btn-sec" style="width: 36px;" title="Clear">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+        </div>
     </div>
 
     <!-- LIST -->
     <div class="list-view">
         <div class="status-bar">
             <span id="count">0 Records</span>
-            <span id="status">Ready</span>
+            <span id="modeBadge" style="font-weight:600; color:#64748B">MANUAL</span>
         </div>
         <table id="dataTable">
             <thead>
@@ -203,7 +279,7 @@
         <div id="emptyState" class="empty-state">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
             <p>No data extracted yet.</p>
-            <p style="font-size: 10px; margin-top: 4px; color: #94A3B8;">Click 'Mine Data' on a results page.</p>
+            <p style="font-size: 10px; margin-top: 4px; color: #94A3B8;">Click 'Mine' or enable Auto-Mining.</p>
         </div>
     </div>
 

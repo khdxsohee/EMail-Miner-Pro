@@ -37,8 +37,9 @@ Unlike basic scrapers, EMail Miner Pro features a **Smart Linking Algorithm** th
 ## ✨ Features
 
 *   **🔍 Smart Website Extraction:**
-    *   **Verified Links:** Directly matches email domains with links on the page.
-    *   **Contextual Linking:** Intelligently searches for the company name within links (e.g., finding `skinstorepakistan.com` for `skinstorepakistan@gmail.com`).
+    *   **Verified Links:** Uses a 3-level verification system (Verified, Linked, Auto) to match emails with correct websites.
+*   **🚀 Auto-Mining Mode:**
+ A new "Set it and forget it" mode. Enable Auto-Mining to automatically extract emails from newly opened tabs in the background without lifting a finger.
 *   **💾 Persistent Storage:**
     *   Data is saved locally in your browser. You can navigate between pages (Page 1 to Page 2), and the extension will accumulate data without losing previous results.
 *   **🚫 Duplicate Filter:**
@@ -174,4 +175,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 </div>
 
 ---
+
 
